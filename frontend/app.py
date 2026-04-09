@@ -51,7 +51,8 @@ st.markdown("""
 # Configuration
 # ============================================================================
 
-API_URL = "http://localhost:8000"
+import os
+API_URL = os.getenv("API_URL", "http://localhost:8000")
 
 
 @st.cache_resource
