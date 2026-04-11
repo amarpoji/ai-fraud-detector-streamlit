@@ -26,8 +26,7 @@ Deploy your Phishing Detector on AWS EC2 using the free tier (t3.micro instance)
    ```
    Type: SSH, Port: 22, Source: Your IP
    Type: HTTP, Port: 80, Source: 0.0.0.0/0
-   Type: Custom TCP, Port: 8501, Source: 0.0.0.0/0
-   Type: Custom TCP, Port: 8000, Source: 0.0.0.0/0
+
    ```
 7. **Storage**: 30 GB (free tier includes 30GB/month)
 8. Click **Launch Instance**
@@ -43,13 +42,13 @@ Deploy your Phishing Detector on AWS EC2 using the free tier (t3.micro instance)
 ### Option A: SSH from Terminal (Recommended)
 ```bash
 # Set key permissions (Mac/Linux)
-chmod 400 your-key.pem
+chmod 400 phising-detector-app.pem
 
 # SSH into instance
-ssh -i your-key.pem ubuntu@<PUBLIC_IP>
+ssh -i phishing-detector-app.pem ubuntu@16.170.146.107
 
 # On Windows PowerShell
-ssh -i .\your-key.pem ubuntu@<PUBLIC_IP>
+ssh -i phishing-detector-app.pem ubuntu@16.170.146.107
 ```
 
 ### Option B: Using EC2 Instance Connect (Browser-based)
@@ -89,7 +88,7 @@ docker-compose --version
 ### 4.1 Clone Repository
 ```bash
 cd ~
-git clone <YOUR_REPO_URL> phishing-detector
+git clone https://github.com/amarpoji/ai-fraud-detector-streamlit.git phishing-detector
 cd phishing-detector
 ```
 
@@ -124,9 +123,9 @@ docker-compose logs -f backend
 ## Step 5: Access Application
 
 ### Access Points:
-- **Streamlit Frontend**: `http://<PUBLIC_IP>:8501`
-- **FastAPI Backend**: `http://<PUBLIC_IP>:8000`
-- **API Docs**: `http://<PUBLIC_IP>:8000/docs`
+- **Streamlit Frontend**: `http://<PUBLIC_IP>/`
+- **FastAPI Backend**: `http://<PUBLIC_IP>/api/`
+- **API Docs**: `http://<PUBLIC_IP>/api/docs`
 - **MLflow UI** (if enabled): `http://<PUBLIC_IP>:5000`
 
 ---

@@ -58,6 +58,7 @@ class AnalysisResponse(BaseModel):
 
 app = FastAPI(
     title="Phishing Detection API",
+    root_path = "/api",
     description="AI-powered analysis of emails and messages for phishing detection",
     version="1.0.0"
 )
@@ -77,101 +78,74 @@ app.add_middleware(
 # ============================================================================
 
 class ModelCache:
-    """Cache for loaded models and vectorizers"""
+    """Cache for loaded models and vectorizers with Production Fallback"""
     def __init__(self):
         self.models = {}
         self.vectorizers = {}
-        self.best_run_id = None
+        # Define paths relative to the project root
+        self.base_dir = Path("/app")
+        self.artifacts_dir = self.base_dir / "mlflow_artifacts"
+        self.static_models_dir = self.base_dir / "backend" / "models"
     
-    def load_model(self, run_id: str):
-        """Load model and vectorizer from saved pickle files"""
+    def load_model(self, run_id: Optional[str] = None):
+        """Load model and vectorizer from artifacts or static fallback"""
+        # If no run_id provided, get the best one from metadata
+        if not run_id:
+            try:
+                run_id, _ = self.get_best_model()
+            except Exception:
+                # If metadata fails, try the static production files directly
+                return self._load_from_static()
+
         if run_id in self.models:
             return self.models[run_id], self.vectorizers[run_id]
         
         try:
-            # Get training info to find the experiment details for this run_id
-            artifacts_dir = Path("mlflow_artifacts")
-            training_info_path = artifacts_dir / "training_info.json"
+            training_info_path = self.artifacts_dir / "training_info.json"
             
             if not training_info_path.exists():
-                raise HTTPException(
-                    status_code=500,
-                    detail="Training info not found. Run training.py first."
-                )
+                return self._load_from_static()
             
             with open(training_info_path, 'r') as f:
                 training_info = json.load(f)
             
-            # Find the experiment result matching this run_id
-            run_result = None
-            for result in training_info['results']:
-                if result['run_id'] == run_id:
-                    run_result = result
-                    break
+            run_result = next((r for r in training_info['results'] if r['run_id'] == run_id), None)
             
             if not run_result:
-                raise ValueError(f"Run ID {run_id} not found in training results")
+                return self._load_from_static()
             
-            # Construct the model directory path
-            model_dir = artifacts_dir / f"{run_result['model_name']}_{run_result['tfidf_variant']}"
-            
-            # Load model and vectorizer from pickle files
-            model_file = model_dir / "model.pkl"
-            vectorizer_file = model_dir / "vectorizer.pkl"
-            
-            if not model_file.exists():
-                raise FileNotFoundError(f"Model file not found: {model_file}")
-            
-            with open(model_file, 'rb') as f:
-                model = pickle.load(f)
-            
-            vectorizer = None
-            if vectorizer_file.exists():
-                with open(vectorizer_file, 'rb') as f:
-                    vectorizer = pickle.load(f)
-                print(f"✓ Loaded model and vectorizer from {model_dir}")
-            else:
-                print(f"⚠ Vectorizer not found at {vectorizer_file}")
-            
-            self.models[run_id] = model
-            self.vectorizers[run_id] = vectorizer
-            
-            return model, vectorizer
-        
-        except HTTPException:
-            raise
-        except Exception as e:
-            print(f"Error loading model {run_id}: {str(e)}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to load model: {str(e)}"
-            )
-    
-    def get_best_model(self):
-        """Get the best model from training results"""
-        try:
-            artifacts_dir = Path("mlflow_artifacts")
-            training_info_path = artifacts_dir / "training_info.json"
-            
-            if not training_info_path.exists():
-                raise FileNotFoundError("Training info not found. Run training.py first.")
-            
-            with open(training_info_path, 'r') as f:
-                training_info = json.load(f)
-            
-            # Get the best model (highest F1-score)
-            best_result = max(
-                training_info['results'],
-                key=lambda x: x['test_f1_score']
-            )
-            
-            return best_result['run_id'], best_result['model_name']
-        except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to find best model: {str(e)}"
-            )
+            model_dir = self.artifacts_dir / f"{run_result['model_name']}_{run_result['tfidf_variant']}"
+            return self._load_pickle_files(model_dir, run_id)
 
+        except Exception as e:
+            print(f"⚠ Error loading run {run_id}: {e}. Falling back to static models.")
+            return self._load_from_static()
+
+    def _load_from_static(self):
+        """Internal helper to load the winner from backend/models/"""
+        if (self.static_models_dir / "model.pkl").exists():
+            return self._load_pickle_files(self.static_models_dir, "production")
+        raise HTTPException(status_code=500, detail="No models found in artifacts or backend/models")
+
+    def _load_pickle_files(self, directory: Path, cache_key: str):
+        """Helper to safely load and cache pickle files"""
+        with open(directory / "model.pkl", 'rb') as f:
+            model = pickle.load(f)
+        with open(directory / "vectorizer.pkl", 'rb') as f:
+            vectorizer = pickle.load(f)
+        
+        self.models[cache_key] = model
+        self.vectorizers[cache_key] = vectorizer
+        return model, vectorizer
+
+    def get_best_model(self):
+        """Get the best model metadata"""
+        training_info_path = self.artifacts_dir / "training_info.json"
+        with open(training_info_path, 'r') as f:
+            training_info = json.load(f)
+        
+        best_result = max(training_info['results'], key=lambda x: x.get('test_f1_score', 0))
+        return best_result['run_id'], best_result['model_name']
 
 model_cache = ModelCache()
 
@@ -305,7 +279,10 @@ async def analyze(request: AnalysisRequest):
         else:
             run_id, model_name = model_cache.get_best_model()
         
-        model, vectorizer = model_cache.load_model(run_id)
+        try:
+            model, vectorizer = model_cache.load_model(run_id if request.model_run_id else None)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
         
         if vectorizer is None:
             raise HTTPException(

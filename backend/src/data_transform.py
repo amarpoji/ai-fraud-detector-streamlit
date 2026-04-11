@@ -7,10 +7,16 @@ from nltk.tokenize import word_tokenize
 import nltk
 import sys
 
+# --- OPTIONAL: Force NLTK path if you still see resolution errors ---
+# nltk.data.path.append(str(Path.home() / "AppData" / "Roaming" / "nltk_data"))
+
 # Download required NLTK data
 nltk.download('punkt_tab', quiet=True)
 nltk.download('stopwords', quiet=True)
 
+# 1. GLOBAL VARIABLES: Loaded once to save time and memory
+STOP_WORDS = set(stopwords.words('english'))
+IMPORTANT_TOKENS = {'url', 'email', 'click', 'verify', 'confirm', 'urgent', 'act', 'now', 'expire'}
 
 def load_config(config_path='params.yaml'):
     """Load configuration from YAML file."""
@@ -21,84 +27,68 @@ def load_config(config_path='params.yaml'):
     except (FileNotFoundError, yaml.YAMLError):
         return {}
 
-
 def clean_text(text):
-    """
-    Advanced text cleaning for phishing detection:
-    1. Remove URLs but keep domain info
-    2. Normalize whitespace and special patterns
-    3. Convert to lowercase
-    4. Tokenize and remove stopwords
-    5. Keep important phishing indicators (currency, numbers)
-    """
+    """Advanced text cleaning for phishing detection."""
     if not isinstance(text, str):
         return ""
     
-    # Replace URLs with URL token to preserve URL presence signal
+    # URL and Email masking
     text = re.sub(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', 'URL', text)
-    
-    # Replace email addresses with EMAIL token
     text = re.sub(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', 'EMAIL', text)
     
-    # Normalize whitespace
-    text = re.sub(r'\s+', ' ', text).strip()
-    
-    # Convert to lowercase
-    text = text.lower()
-    
-    # Remove special characters but keep alphanumeric, space, and special tokens
+    # Normalization
+    text = re.sub(r'\s+', ' ', text).strip().lower()
     text = re.sub(r'[^a-z0-9\s$€£¥%()[\]\-]', ' ', text)
-    
-    # Normalize repeated characters (e.g., "!!!!" -> "!")
     text = re.sub(r'(.)\1{2,}', r'\1', text)
     
-    # Tokenize
+    # Tokenization using global stop_words for speed
     tokens = word_tokenize(text)
-    
-    # Remove stopwords but keep important phishing indicators
-    stop_words = set(stopwords.words('english'))
-    important_tokens = {'url', 'email', 'click', 'verify', 'confirm', 'urgent', 'act', 'now', 'expire'}
-    
     tokens = [
         token for token in tokens 
-        if (token not in stop_words or token in important_tokens) and len(token) > 1
+        if (token not in STOP_WORDS or token in IMPORTANT_TOKENS) and len(token) > 1
     ]
     
     return " ".join(tokens)
 
-
 def transform_data(input_path, output_path=None):
-    """
-    Transform raw email dataset by adding cleaned_text column.
-    
-    Args:
-        input_path: Path to raw CSV file
-        output_path: Path to save transformed data (optional)
-    
-    Returns:
-        pd.DataFrame: Transformed dataframe
-    """
-    # Load raw data
+    """Transform raw email dataset with cleaning and label encoding."""
     df = pd.read_csv(input_path)
-    
     print(f"Loaded {len(df)} records from {input_path}")
-    print(f"Columns: {list(df.columns)}")
-    
-    # Apply text cleaning
+
+    # 1. DROP INITIAL NaNs
+    initial_len = len(df)
+    df = df.dropna(subset=['text', 'label'])
+    print(f"Dropped {initial_len - len(df)} rows with missing text or labels.")
+
+    # 2. LABEL TRANSFORMATION (Numeric only)
+    label_map = {
+        'spam': 1, 'Spam': 1, 'SPAM': 1,
+        'ham': 0, 'Ham': 0, 'HAM': 0,
+        1: 1, 0: 0, '1': 1, '0': 0 
+    }
+    df['label'] = df['label'].map(label_map).fillna(0).astype(int)
+    print("✓ Labels converted to integers.")
+
+    # 3. APPLY TEXT CLEANING
+    print("🔄 Cleaning text (this may take a minute)...")
     df['cleaned_text'] = df['text'].apply(clean_text)
     
-    print(f"\nTransformation complete. Added 'cleaned_text' column.")
+    # 4. FINAL CLEANUP: Remove rows that became empty after cleaning
+    # Use pd.NA and then dropna for the most reliable removal
+    df.loc[df['cleaned_text'].str.strip() == "", 'cleaned_text'] = pd.NA
+    df = df.dropna(subset=['cleaned_text'])
     
-    # Save transformed data if output path is provided
+    print(f"✓ Transformation complete. {len(df)} valid records remaining.")
+    
     if output_path:
-        # Create directory if it doesn't exist
         output_dir = Path(output_path).parent
         output_dir.mkdir(parents=True, exist_ok=True)
-        
         df.to_csv(output_path, index=False)
-        print(f"Saved transformed data to {output_path}")
+        print(f"💾 Saved transformed data to {output_path}")
     
     return df
+
+# ... (rest of your get_data_paths and main functions)
 
 
 def get_data_paths():
@@ -153,4 +143,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

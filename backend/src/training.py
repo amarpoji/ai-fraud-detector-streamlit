@@ -17,37 +17,12 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB
+import dagshub
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, roc_curve
 import warnings
-
+from utils import load_config, setup_mlflow
 warnings.filterwarnings('ignore')
 
-
-def load_config(config_path='params.yaml'):
-    """Load configuration from YAML file."""
-    try:
-        with open(config_path, 'r') as f:
-            config = yaml.safe_load(f)
-        return config or {}
-    except (FileNotFoundError, yaml.YAMLError) as e:
-        print(f"Error loading config: {e}")
-        return {}
-
-
-def setup_mlflow(config):
-    """Setup MLflow tracking."""
-    tracking_uri = os.getenv('MLFLOW_TRACKING_URI')
-    
-    if tracking_uri:
-        mlflow.set_tracking_uri(tracking_uri)
-        print(f"✓ MLflow tracking URI: {tracking_uri}")
-    else:
-        print("ℹ Using local MLflow tracking")
-    
-    mlflow_config = config.get('mlflow', {})
-    experiment_name = mlflow_config.get('experiment_name', 'email-phishing-detection')
-    mlflow.set_experiment(experiment_name)
-    print(f"✓ Experiment: {experiment_name}")
 
 
 def load_processed_data(processed_path, test_size=0.2, random_state=42):

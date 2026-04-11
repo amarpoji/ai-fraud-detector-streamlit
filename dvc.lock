@@ -9,8 +9,8 @@ stages:
       size: 2721719
     - path: backend/src/data_transform.py
       hash: md5
-      md5: 4838d0b3d6e7b1fa743320d8bac4a515
-      size: 4713
+      md5: b2333fb097e1d7aff48951325c699fda
+      size: 4842
     params:
       params.yaml:
         data.processed_path: backend/data/processed/email_dataset_processed.csv
@@ -29,16 +29,16 @@ stages:
       size: 4589036
     - path: backend/src/data_transform.py
       hash: md5
-      md5: 4838d0b3d6e7b1fa743320d8bac4a515
-      size: 4713
+      md5: b2333fb097e1d7aff48951325c699fda
+      size: 4842
     - path: backend/src/training.py
       hash: md5
-      md5: 30ff91ee898cde81cd2289091f7d05d8
-      size: 15456
+      md5: fdaaada274cdda05fd6f6e5d6c10ae11
+      size: 14634
     - path: params.yaml
       hash: md5
-      md5: d4a19972803f3e3983e832b8b8f4100a
-      size: 1751
+      md5: 076e36d1f61f05eac3b795b1542155a7
+      size: 2051
     params:
       params.yaml:
         data.processed_path: backend/data/processed/email_dataset_processed.csv
@@ -116,7 +116,7 @@ stages:
     outs:
     - path: mlflow_artifacts/training_info.json
       hash: md5
-      md5: a4f89533363e15d017211c2ffa5fa2c6
+      md5: 35bfc313d99eeacdcbea8e7e62bd69b4
       size: 3953
   evaluate:
     cmd: python backend/src/evaluation.py
@@ -127,20 +127,20 @@ stages:
       size: 4589036
     - path: backend/src/data_transform.py
       hash: md5
-      md5: 4838d0b3d6e7b1fa743320d8bac4a515
-      size: 4713
+      md5: b2333fb097e1d7aff48951325c699fda
+      size: 4842
     - path: backend/src/evaluation.py
       hash: md5
       md5: 068572ee1627f164a6757bb34f7663ed
       size: 11661
     - path: mlflow_artifacts/training_info.json
       hash: md5
-      md5: a4f89533363e15d017211c2ffa5fa2c6
+      md5: 1ef30fff8405437c748f912014d85a24
       size: 3953
     - path: params.yaml
       hash: md5
-      md5: d4a19972803f3e3983e832b8b8f4100a
-      size: 1751
+      md5: 076e36d1f61f05eac3b795b1542155a7
+      size: 2051
     params:
       params.yaml:
         data.processed_path: backend/data/processed/email_dataset_processed.csv
@@ -185,5 +185,5 @@ stages:
     outs:
     - path: mlflow_artifacts/evaluation_report.csv
       hash: md5
-      md5: 1442d0e50c09c0db4c50036c1393c0a9
-      size: 837
+      md5: 0ae9bcd0c0b0aa5aab99d84beca26ce8
+      size: 4

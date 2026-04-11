@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
 
-
 # ============================================================================
 # Page Configuration
 # ============================================================================
@@ -52,7 +51,8 @@ st.markdown("""
 # ============================================================================
 
 import os
-API_URL = os.getenv("API_URL", "http://localhost:8000")
+BACKEND_URL = os.getenv("BACKEND_URL", "http://backend:8000")
+API_URL = os.getenv("API_URL", BACKEND_URL)
 
 
 @st.cache_resource
@@ -64,13 +64,13 @@ def get_api_client():
 def get_available_models():
     """Fetch available models from API"""
     try:
+        # We use API_URL here so Nginx can handle the routing if needed
         response = requests.get(f"{API_URL}/models", timeout=5)
         if response.status_code == 200:
             return response.json()
         return None
-    except Exception as e:
-        st.warning(f"Could not fetch models: {e}")
-        return None
+    except Exception:
+        return None # Silent failure to keep UI clean
 
 
 def analyze_message(message: str, run_id: Optional[str] = None) -> dict:
@@ -166,30 +166,37 @@ with st.sidebar:
     st.divider()
     
     # Model Selection
+ # Model Selection
     st.subheader("Model Selection")
-    
     models_data = get_available_models()
     if models_data and models_data.get('models'):
-        models = models_data['models']
-        model_options = {m['name']: m['run_id'] for m in models}
+        best_model = models_data.get('best_model')
+        all_models = models_data.get('models') # Helpful to keep this variable
         
-        selected_model = st.selectbox(
-            "Choose Model",
-            options=list(model_options.keys()),
-            help="Select which trained model to use for analysis"
+        # Display the "Winner" with nice formatting
+        options = [f"⭐ {best_model['name']} (Best)"]
+        run_id_map = {options[0]: best_model['run_id']}
+        
+        selected_display = st.selectbox(
+            "Model in Production",
+            options=options,
+            help="The top-performing model is automatically selected."
         )
-        selected_run_id = model_options[selected_model]
         
-        # Show model stats
-        selected_model_data = next((m for m in models if m['name'] == selected_model), None)
-        if selected_model_data:
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("F1", f"{selected_model_data['f1_score']:.4f}")
-            with col2:
-                st.metric("Accuracy", f"{selected_model_data['accuracy']:.4f}")
-            with col3:
-                st.metric("ROC-AUC", f"{selected_model_data['roc_auc']:.4f}")
+        # LINKING THE DATA:
+        # Since the list is sorted by F1, index 0 is always the 'best_model'
+        selected_run_id = run_id_map[selected_display]
+        selected_model_data = all_models[0] 
+
+        # Display the Metrics for the judges
+        st.markdown("---")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("F1", f"{selected_model_data['f1_score']:.4f}")
+        with col2:
+            st.metric("Accuracy", f"{selected_model_data['accuracy']:.4f}")
+        with col3:
+            st.metric("ROC-AUC", f"{selected_model_data['roc_auc']:.4f}")
     else:
         st.warning("No models available. Run training first.")
         selected_run_id = None
@@ -227,6 +234,13 @@ with st.sidebar:
 # ============================================================================
 
 st.title("🔍 Phishing Detector")
+
+if "message_text" not in st.session_state:
+    st.session_state.message_text = ""
+
+# Helper function to update the text
+def set_message(text):
+    st.session_state.message_text = text
 st.markdown("AI-Powered Email & Message Analysis")
 
 # Initialize session state
@@ -245,9 +259,10 @@ col1, col2 = st.columns([3, 1])
 with col1:
     message = st.text_area(
         "Paste the email or message text:",
+        value=st.session_state.message_text, # <--- Pulls from our helper
         placeholder="Dear Customer, Please verify your account...",
         height=150,
-        key="message_input"
+        key="main_input_area" # <--- Changed key to be safe
     )
 
 with col2:
@@ -300,7 +315,7 @@ if analyze_button and message:
                     emoji = "🟢"
                 
                 st.markdown(f"""
-                <div class="metric-box" style="background: #f0f0f0; border-left: 4px solid {'#d32f2f' if risk_score >= 70 else '#f57c00' if risk_score >= 40 else '#388e3c'};">
+                <div class="metric-box" style="background: #000000; border-left: 4px solid {'#d32f2f' if risk_score >= 70 else '#f57c00' if risk_score >= 40 else '#388e3c'};">
                     <p style="margin: 0; color: #666;">Classification</p>
                     <h2 style="margin: 5px 0; {risk_class}">{emoji} {label}</h2>
                     <p style="margin: 5px 0; font-size: 24px; font-weight: bold;">{risk_score:.1f}%</p>
@@ -309,9 +324,11 @@ if analyze_button and message:
                 """, unsafe_allow_html=True)
             
             with col2:
-                # Gauge
+                
                 fig = draw_risk_gauge(risk_score)
                 st.pyplot(fig, use_container_width=True)
+                # This adds the nice caption below the gauge for the judges
+                st.caption(f"Model: {result.get('model_used')} | Analysis Date: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
             
             st.divider()
             
@@ -378,14 +395,14 @@ with st.expander("💡 Example Messages"):
         st.subheader("Example Phishing")
         phishing_example = "Dear Valued Customer, Your account has been compromised! Click here immediately to verify your credentials. Act NOW or your account will be suspended. https://verify-account-now.com"
         if st.button("📋 Copy Phishing Example"):
-            st.session_state.message_input = phishing_example
-            st.rerun()
+            set_message(phishing_example)
+            st.rerun() # Forces the page to refresh and show text in the box
     
     with col2:
         st.subheader("Example Legitimate")
         legitimate_example = "Hi John, Hope you're doing well. Just checking in on the project status. Let me know if you need anything from my end. Best regards, Sarah"
         if st.button("📋 Copy Legitimate Example"):
-            st.session_state.message_input = legitimate_example
+            set_message(legitimate_example)
             st.rerun()
 
 

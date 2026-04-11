@@ -2,6 +2,8 @@ data:
   raw_path: backend/data/raw/email_dataset.csv
   processed_path: backend/data/processed/email_dataset_processed.csv
 
+
+
 preprocessing:
   train_test_split: 0.2
   random_state: 42
@@ -80,3 +82,14 @@ mlflow:
     - f1_score
     - roc_auc
     - training_time
+
+mlflow_ui:
+  use_dagshub: true
+  repo_owner: "amarpoji"
+  repo_name: "ai-fraud-detector-streamlit"
+  experiment_name: "email-phishing-detection"
+  run_name_prefix: "phishing-detector"
+  track_model_signature: true
+  register_model: true
+  model_registry_name: "fraud-detector-model"
+
