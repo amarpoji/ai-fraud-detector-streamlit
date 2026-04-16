@@ -1,6 +1,7 @@
 services:
   # Backend - FastAPI + ML Model
   backend:
+    image: 483692969969.dkr.ecr.eu-north-1.amazonaws.com/phishing-backend:latest
     build:
       context: .
       dockerfile: Dockerfile.backend
@@ -21,6 +22,7 @@ services:
 
   # Frontend - Streamlit
   frontend:
+    image: 483692969969.dkr.ecr.eu-north-1.amazonaws.com/phishing-frontend:latest
     build:
       context: .
       dockerfile: Dockerfile.frontend

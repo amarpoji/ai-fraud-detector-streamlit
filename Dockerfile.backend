@@ -18,6 +18,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy backend code
 COPY backend/src ./src
 COPY backend/data ./data
+COPY backend/models ./models
 COPY params.yaml .
 COPY dvc.yaml .
 

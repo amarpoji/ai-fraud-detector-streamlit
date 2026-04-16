@@ -45,7 +45,8 @@ Deploy your Phishing Detector on AWS EC2 using the free tier (t3.micro instance)
 chmod 400 phising-detector-app.pem
 
 # SSH into instance
-ssh -i phishing-detector-app.pem ubuntu@16.170.146.107
+ssh -i phishing-detector.pem ubuntu@13.51.108.56
+
 
 # On Windows PowerShell
 ssh -i phishing-detector-app.pem ubuntu@16.170.146.107

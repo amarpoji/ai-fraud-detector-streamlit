@@ -3,3 +3,6 @@ mlflow.db
 mlruns/
 mlflow_artifacts/
 backend/data/processed/email_dataset_processed.csv
+SUMMARY.txt
+presentation.md
+AWS_DEPLOYMENT.md
