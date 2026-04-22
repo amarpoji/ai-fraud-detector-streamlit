@@ -116,7 +116,7 @@ stages:
     outs:
     - path: mlflow_artifacts/training_info.json
       hash: md5
-      md5: 35bfc313d99eeacdcbea8e7e62bd69b4
+      md5: 754e45bb9471963cc45bf4a2d46f6808
       size: 3953
   evaluate:
     cmd: python backend/src/evaluation.py

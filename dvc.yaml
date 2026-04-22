@@ -35,6 +35,7 @@ stages:
       - mlflow_artifacts/training_info.json
     outs:
       - mlflow_artifacts/evaluation_report.csv
+      - backend/models
     params:
       - data.processed_path
       - preprocessing

@@ -141,6 +141,10 @@ class ModelCache:
     def get_best_model(self):
         """Get the best model metadata"""
         training_info_path = self.artifacts_dir / "training_info.json"
+        
+        if not training_info_path.exists():
+            return "production", "static_model"
+            
         with open(training_info_path, 'r') as f:
             training_info = json.load(f)
         

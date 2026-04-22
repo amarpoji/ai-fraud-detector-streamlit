@@ -188,6 +188,11 @@ def main():
     eval_df = pd.DataFrame(evaluation_results).T
     if not eval_df.empty:
         print("\n" + eval_df.to_string())
+        
+        # Save the evaluation report for DVC
+        report_path = project_root / "mlflow_artifacts" / "evaluation_report.csv"
+        eval_df.to_csv(report_path)
+        
         # Export the model with the highest F1 Score
         best_model_name = eval_df['f1_score'].idxmax()
         export_winning_model(best_model_name)
