@@ -7,9 +7,9 @@ services:
       dockerfile: Dockerfile.backend
     container_name: phishing_backend
     # We no longer mount mlruns or mlflow_artifacts, we only use the local model
-    command: uvicorn backend.src.app:app --host 0.0.0.0 --port 8000
+    command: uvicorn src.app:app --host 0.0.0.0 --port 8000
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      test: ["CMD-SHELL", "python -c \"import requests; requests.get('http://localhost:8000/health')\" || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
