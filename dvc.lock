@@ -131,11 +131,11 @@ stages:
       size: 4842
     - path: backend/src/evaluation.py
       hash: md5
-      md5: 068572ee1627f164a6757bb34f7663ed
-      size: 11661
+      md5: 9ea09f0b07a134ef9814029883afc413
+      size: 7615
     - path: mlflow_artifacts/training_info.json
       hash: md5
-      md5: 1ef30fff8405437c748f912014d85a24
+      md5: 754e45bb9471963cc45bf4a2d46f6808
       size: 3953
     - path: params.yaml
       hash: md5
@@ -183,7 +183,12 @@ stages:
               min_df: 1
               max_df: 0.95
     outs:
+    - path: backend/models
+      hash: md5
+      md5: 2673f4cf21e907c14fd0bd6ac563754e.dir
+      size: 433593
+      nfiles: 2
     - path: mlflow_artifacts/evaluation_report.csv
       hash: md5
-      md5: 0ae9bcd0c0b0aa5aab99d84beca26ce8
-      size: 4
+      md5: eff2d3d009adf43d1122e0ceacebe492
+      size: 819
