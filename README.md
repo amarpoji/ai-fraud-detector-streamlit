@@ -1,27 +1,26 @@
-
 # 🔍 Phishing Detector - AI-Powered Fraud Detection
 
-A machine learning application for detecting phishing and fraudulent messages using FastAPI backend and Streamlit frontend.
+A machine learning application for detecting phishing and fraudulent messages using a FastAPI backend and a Streamlit frontend.
 
-**Status**: ✅ Streamlit-only, Docker-ready, AWS deployment-ready
+**Status**: ✅ Streamlit UI, Docker-ready, AWS deployment-ready with DVC pipelines
 
 ---
 
 ## 🎯 Features
 
-- 🤖 **AI Models**: Multiple trained ML models for classification
+- 🤖 **AI Models**: Pre-trained ML models for robust text classification
 - 📊 **Risk Scoring**: Real-time phishing risk assessment (0-100%)
-- 🚩 **Red Flag Detection**: Identifies suspicious patterns
+- 🚩 **Red Flag Detection**: Identifies suspicious patterns (urgency, requests for money, etc.)
 - 📈 **Model Metrics**: Track F1, Accuracy, ROC-AUC
-- 💾 **MLflow Integration**: Experiment tracking and model versioning
-- 🐳 **Docker Support**: Full containerization for easy deployment
-- ☁️ **AWS Ready**: Deploy on EC2 free tier
+- 💾 **DVC & MLflow Integration**: Fully reproducible pipelines with DagsHub MLflow tracking
+- 🐳 **Docker Support**: Full containerization for easy deployment with Nginx proxy
+- ☁️ **AWS Ready**: Production-ready deployment instructions for EC2
 
 ---
 
 ## 🏗️ Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────┐
 │         Streamlit Frontend (8501)           │
 │  - Interactive UI for message analysis      │
@@ -32,14 +31,14 @@ A machine learning application for detecting phishing and fraudulent messages us
                ▼
 ┌─────────────────────────────────────────────┐
 │        FastAPI Backend (8000)               │
-│  - ML model inference                       │
-│  - Feature extraction                       │
-│  - Risk calculation                         │
+│  - Static pre-trained model inference       │
+│  - Fallback MLflow model loading            │
+│  - Feature extraction & Risk calculation    │
 └──────────────┬──────────────────────────────┘
                │
-        ┌──────┴──────┐
-        ▼             ▼
-    [Models]     [MLflow UI]
+         ┌─────┴─────┐
+         ▼           ▼
+[backend/models/]  [DagsHub MLflow]
 ```
 
 ---
@@ -57,12 +56,8 @@ cd ai-fraud-detector
 #### 2. Create Virtual Environment
 ```bash
 python -m venv venv
-
-# Activate (Linux/Mac)
-source venv/bin/activate
-
-# Activate (Windows)
-venv\Scripts\activate
+source venv/bin/activate  # Linux/Mac
+venv\Scripts\activate     # Windows
 ```
 
 #### 3. Install Dependencies
@@ -70,18 +65,20 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-#### 4. Start Backend (Terminal 1)
+#### 4. Train Models (DVC Pipeline)
 ```bash
-cd backend
-python -m uvicorn src.app:app --reload
-# API running at http://localhost:8000
-# Docs at http://localhost:8000/docs
+dvc repro
 ```
+*This will run data transformation, train multiple models, evaluate them, and save the best model to `backend/models/`.*
 
-#### 5. Start Frontend (Terminal 2)
+#### 5. Start Backend & Frontend locally
 ```bash
-cd frontend
-streamlit run app.py
+# Terminal 1: Backend
+uvicorn backend.src.app:app --reload
+# API running at http://localhost:8000
+
+# Terminal 2: Frontend
+streamlit run frontend/app.py
 # App running at http://localhost:8501
 ```
 
@@ -89,66 +86,63 @@ streamlit run app.py
 
 ## 🐳 Docker Deployment
 
-### Build & Run with Docker Compose
+The project contains two separate Docker configurations:
+- `docker-compose.yml`: Local development with hot-reloading and MLflow UI.
+- `docker-compose.prod.yml`: Lightweight production environment using static pre-trained models.
 
+### Local Development (With Hot Reload)
 ```bash
-# Build images
-docker-compose build
-
-# Start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
+docker-compose up -d --build
 ```
-
 **Access Points:**
 - Frontend: http://localhost:8501
-- Backend: http://localhost:8000
-- API Docs: http://localhost:8000/docs
-- MLflow: http://localhost:5000
+- Backend API: http://localhost:8000
+- MLflow UI: http://localhost:5000
+
+### Production Deployment (Pre-trained Models)
+```bash
+docker-compose -f docker-compose.prod.yml up -d --build
+```
+**Access Points:**
+- Application available at `http://localhost:80` (via Nginx proxy)
+*Note: Make sure you have trained your models using `dvc repro` so that `backend/models/` contains your `.pkl` files before running the production compose file.*
 
 ---
 
 ## ☁️ AWS Deployment
 
-### Deploy on EC2 (Free Tier)
+We provide two deployment paths for AWS EC2:
 
-See **[AWS_DEPLOYMENT.md](./AWS_DEPLOYMENT.md)** for detailed instructions:
-
-1. ✅ Launch EC2 t3.micro instance
-2. ✅ Install Docker & Docker Compose
-3. ✅ Clone repository
-4. ✅ Run docker-compose up -d
-5. ✅ Access via public IP
-
-**Cost**: ~$0/month (free tier), ~$8/month after
+1. **[PROD_DEPLOYMENT_GUIDE.md](./PROD_DEPLOYMENT_GUIDE.md)** *(Recommended)*: A lightweight, production-ready approach using `docker-compose.prod.yml` and pre-trained static models. Perfect for the EC2 Free Tier.
+2. **[AWS_DEPLOYMENT.md](./AWS_DEPLOYMENT.md)**: A full deployment guide including MLflow and remote training on the server.
 
 ---
 
 ## 📁 Project Structure
 
-```
+```text
 ai-fraud-detector/
 ├── backend/
 │   ├── src/
 │   │   ├── app.py              # FastAPI application
 │   │   ├── training.py         # Model training
 │   │   ├── evaluation.py       # Model evaluation
+│   │   ├── utils.py            # Utility functions
 │   │   └── data_transform.py   # Data processing
-│   ├── data/                   # Training data
-│   └── requirements.txt        # Backend deps
+│   ├── data/                   # Raw & processed data
+│   └── models/                 # Winning static models (.pkl)
 ├── frontend/
 │   ├── app.py                  # Streamlit app
 │   └── requirements.txt        # Frontend deps
-├── docker-compose.yml          # Service orchestration
+├── docker-compose.yml          # Local dev orchestration
+├── docker-compose.prod.yml     # Production orchestration
 ├── Dockerfile.backend          # Backend container
 ├── Dockerfile.frontend         # Frontend container
-├── AWS_DEPLOYMENT.md           # Deployment guide
-└── README.md                   # This file
+├── dvc.yaml                    # DVC pipeline configuration
+├── params.yaml                 # Central configuration file
+├── nginx.conf                  # Production reverse proxy config
+├── PROD_DEPLOYMENT_GUIDE.md    # Production EC2 guide
+└── AWS_DEPLOYMENT.md           # Full EC2 guide
 ```
 
 ---
@@ -157,19 +151,13 @@ ai-fraud-detector/
 
 ### Environment Variables
 
-Backend (.env or docker-compose):
-```
-PYTHONUNBUFFERED=1
-MLFLOW_TRACKING_URI=sqlite:///mlflow.db
-API_HOST=0.0.0.0
-API_PORT=8000
-```
+**Backend (`params.yaml`):**
+Configure your DagsHub MLflow credentials, training splits, and model variations inside `params.yaml`.
 
-Frontend (docker-compose):
-```
-API_URL=http://backend:8000  # Docker network
-# or
-API_URL=http://localhost:8000  # Local dev
+**Frontend (`docker-compose.yml`):**
+```yaml
+environment:
+  - BACKEND_URL=http://backend:8000
 ```
 
 ---
@@ -179,13 +167,13 @@ API_URL=http://localhost:8000  # Local dev
 ### Health Check
 ```bash
 GET /health
-# Response: {"status": "ok"}
+# Response: {"status": "healthy"}
 ```
 
 ### Get Available Models
 ```bash
 GET /models
-# Response: {"models": [...]}
+# Response: {"total": 1, "models": [...], "best_model": {...}}
 ```
 
 ### Analyze Message
@@ -194,121 +182,29 @@ POST /analyze
 Content-Type: application/json
 
 {
-  "message": "Click here to verify account",
-  "model_run_id": "model-123"
+  "message": "Click here to verify account immediately!",
+  "model_run_id": null
 }
 
 # Response:
 {
-  "label": "phishing",
+  "label": "Phishing",
   "risk_score": 85.5,
   "confidence": 0.92,
-  "explanation": "...",
-  "red_flags": [...]
+  "explanation": "⚠️ HIGH RISK: This message shows strong indicators...",
+  "red_flags": [...],
+  "model_used": "production"
 }
-```
-
----
-
-## 🧪 Testing
-
-### Health Check
-```bash
-# Backend
-curl http://localhost:8000/health
-
-# Frontend
-curl http://localhost:8501
-```
-
-### API Test
-```bash
-curl -X POST http://localhost:8000/analyze \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "Verify your account now!",
-    "model_run_id": null
-  }'
-```
-
----
-
-## 📈 Model Training
-
-Run training pipeline:
-```bash
-cd backend
-python -m dvc repro
-# or
-python src/training.py
-```
-
-Track experiments in MLflow:
-```
-http://localhost:5000
-```
-
----
-
-## 🐛 Troubleshooting
-
-### Frontend can't connect to backend
-- Check backend is running: `docker-compose ps`
-- Verify API_URL environment variable
-- Check network connectivity: `curl http://localhost:8000/health`
-
-### Docker build fails
-```bash
-# Clear cache
-docker-compose build --no-cache
-
-# Check logs
-docker-compose logs backend
-```
-
-### Port already in use
-```bash
-# Linux/Mac: Kill process on port
-lsof -i :8501 | grep LISTEN | awk '{print $2}' | xargs kill -9
-
-# Windows: 
-netstat -ano | findstr :8501
-taskkill /PID <PID> /F
-```
-
----
-
-## 📝 Development
-
-### Add Dependencies
-
-Frontend:
-```bash
-# Add to frontend/requirements.txt
-pip install <package>
-pip freeze > frontend/requirements.txt
-```
-
-Backend:
-```bash
-# Add to requirements.txt
-pip install <package>
-pip freeze > requirements.txt
-```
-
-Then rebuild Docker:
-```bash
-docker-compose build
 ```
 
 ---
 
 ## 📚 Documentation
 
-- [AWS Deployment Guide](./AWS_DEPLOYMENT.md)
+- [Production Deployment Guide](./PROD_DEPLOYMENT_GUIDE.md)
 - [FastAPI Documentation](https://fastapi.tiangolo.com)
 - [Streamlit Documentation](https://docs.streamlit.io)
-- [Docker Documentation](https://docs.docker.com)
+- [DVC Documentation](https://dvc.org/doc)
 
 ---
 
