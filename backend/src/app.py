@@ -82,10 +82,15 @@ class ModelCache:
     def __init__(self):
         self.models = {}
         self.vectorizers = {}
-        # Define paths relative to the project root
-        self.base_dir = Path("/app")
+        # Use /app in Docker, otherwise use the project root
+        if Path("/app/models").exists() or Path("/app/src").exists():
+            self.base_dir = Path("/app")
+            self.static_models_dir = self.base_dir / "models"
+        else:
+            self.base_dir = Path(__file__).resolve().parents[2]
+            self.static_models_dir = self.base_dir / "backend" / "models"
+            
         self.artifacts_dir = self.base_dir / "mlflow_artifacts"
-        self.static_models_dir = self.base_dir / "backend" / "models"
     
     def load_model(self, run_id: Optional[str] = None):
         """Load model and vectorizer from artifacts or static fallback"""
@@ -348,7 +353,12 @@ async def list_models():
         training_info_path = artifacts_dir / "training_info.json"
         
         if not training_info_path.exists():
-            static_models_dir = Path("/app/backend/models")
+            # Check for static models
+            if Path("/app/models/model.pkl").exists():
+                static_models_dir = Path("/app/models")
+            else:
+                static_models_dir = Path(__file__).resolve().parents[2] / "backend" / "models"
+                
             if (static_models_dir / "model.pkl").exists():
                 static_model = {
                     'name': 'Production Best Model (Static)',
