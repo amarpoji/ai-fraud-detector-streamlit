@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Phishing Detector - Presentation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #f8fafc;
+            --accent-color: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.5);
+            --card-bg: #1e293b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Background animated blobs */
+        .blob {
+            position: absolute;
+            filter: blur(80px);
+            z-index: -1;
+            opacity: 0.6;
+            animation: float 10s infinite ease-in-out alternate;
+        }
+
+        .blob-1 {
+            top: -10%;
+            left: -10%;
+            width: 500px;
+            height: 500px;
+            background: #3b82f6;
+        }
+
+        .blob-2 {
+            bottom: -10%;
+            right: -10%;
+            width: 600px;
+            height: 600px;
+            background: #8b5cf6;
+            animation-delay: -5s;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            100% {
+                transform: translate(50px, 50px) scale(1.1);
+            }
+        }
+
+        /* Slide Container */
+        .slider {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .slide {
+            position: absolute;
+            width: 80%;
+            max-width: 1000px;
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+            transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 50px;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: all;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        p,
+        ul,
+        li {
+            font-size: 1.25rem;
+            line-height: 1.7;
+            color: #cbd5e1;
+        }
+
+        ul {
+            padding-left: 30px;
+            margin-top: 15px;
+        }
+
+        li {
+            margin-bottom: 15px;
+        }
+
+        .highlight {
+            color: #60a5fa;
+            font-weight: 600;
+        }
+
+        /* Grid Layouts for Content */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: rgba(15, 23, 42, 0.6);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Controls */
+        .controls {
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 0 40px;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Speaker Notes Area */
+        .notes-container {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(234, 179, 8, 0.1);
+            border-left: 4px solid #eab308;
+            border-radius: 4px;
+            font-size: 1.1rem;
+            color: #fde047;
+            font-style: italic;
+        }
+
+        .architecture-img {
+            width: 100%;
+            border-radius: 8px;
+            font-family: monospace;
+            background: #0f172a;
+            padding: 20px;
+            white-space: pre;
+            font-size: 0.9rem;
+            color: #34d399;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="slider" id="slider">
+        <!-- Slide 1 -->
+        <div class="slide active">
+            <h1>AI-Powered Phishing Detector</h1>
+            <p style="font-size: 1.5rem; margin-top: 10px;">Intelligent fraud detection using Machine Learning & MLOps
+            </p>
+            <div style="margin-top: 40px;">
+                <p><strong>Speaker:</strong> Amar and Amir</p>
+                <p><strong>Duration:</strong> 15 Minutes</p>
+            </div>
+            <div class="notes-container">
+                <strong>Speaker Notes:</strong> Welcome the audience. Introduce yourself. State the objective: "Today,
+                we are going to explore a modern, scalable solution to one of the biggest cybersecurity threats today:
+                Phishing."
+            </div>
+        </div>
+
+        <!-- Slide 2 -->
+        <div class="slide">
+            <h2>The Problem: The Rise of Phishing</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h3 style="color: #f87171; margin-bottom: 10px;">The Threat Landscape</h3>
+                    <p>Phishing attacks account for over <strong>80%</strong> of reported security incidents.</p>
+                    <p style="margin-top: 10px;">Attackers use sophisticated social engineering to steal credentials,
+                        financial data, and sensitive personal information.</p>
+                </div>
+                <div class="card">
+                    <h3 style="color: #fbbf24; margin-bottom: 10px;">Current Limitations</h3>
+                    <p>Traditional systems rely on <strong>static blacklists</strong> and rigid rules. They cannot adapt
+                        to new, cleverly disguised phrasing used by modern attackers.</p>
+                </div>
+            </div>
+            <div class="notes-container">
+                <strong>Speaker Notes:</strong> Emphasize that traditional firewalls and spam filters are failing
+                because attackers change their domain names and email phrasing daily. We need a system that understands
+                the *context* and *intent* of a message, not just its sender.
+            </div>
+        </div>
+
+        <!-- Slide 3 -->
+        <div class="slide">
+            <h2>The Solution: Our AI Pipeline</h2>
+            <p>We built a full-stack Machine Learning application that analyzes text in real-time, assigning a risk
+                score based on learned patterns and psychological triggers.</p>
+            <ul>
+                <li><span class="highlight">Machine Learning Models:</span> Trained on over 10,000 legitimate and
+                    phishing emails using TF-IDF vectorization and advanced classifiers.</li>
+                <li><span class="highlight">Heuristic Red Flags:</span> Detects specific psychological triggers
+                    (Urgency, Money Requests, Deception).</li>
+                <li><span class="highlight">Modern Stack:</span> Accessible via a beautiful Streamlit UI and powered by
+                    a highly concurrent FastAPI backend.</li>
+            </ul>
+            <div class="notes-container">
+                <strong>Speaker Notes:</strong> Explain that our solution isn't just a model in a Jupyter notebook. It's
+                a fully productized application. It combines the statistical power of AI with explicit rule-based "Red
+                Flags" so users get an explanation they can actually understand.
+            </div>
+        </div>
+
+        <!-- Slide 4 -->
+        <div class="slide">
+            <h2>System Architecture</h2>
+            <div class="architecture-img">
+                ┌─────────────────────────────────────────────┐
+                │ Streamlit Frontend (Port 8501) │
+                │ - Interactive UI for message analysis │
+                │ - Real-time Risk visualization │
+                └──────────────┬──────────────────────────────┘
+                │ HTTP/REST
+                ▼
+                ┌─────────────────────────────────────────────┐
+                │ FastAPI Backend (Port 8000) │
+                │ - Static pre-trained model inference │
+                │ - NLP Feature extraction │
+                │ - Explainable AI (Red Flag generation) │
+                └──────────────┬──────────────────────────────┘
+                │
+                ┌─────┴─────┐
+                ▼ ▼
+                [Local .pkl] [DagsHub MLflow]
+            </div>
+            <div class="notes-container">
+                <strong>Speaker Notes:</strong> Walk through the flow. The user types a message in the Streamlit UI. It
+                sends a JSON payload to FastAPI. FastAPI uses NLTK to clean the text, converts it to vectors, runs it
+                through the loaded Pickle model, calculates a risk score, and sends the verdict back.
+            </div>
+        </div>
+
+        <!-- Slide 5 -->
+        <div class="slide">
+            <h2>Data & MLOps Pipeline</h2>
+            <p>To ensure our models are reproducible and trackable, we implemented enterprise-grade MLOps.</p>
+            <div class="grid-2">
+                <div class="card">
+                    <h3 style="color: #60a5fa;">Data Version Control (DVC)</h3>
+                    <p>We use DVC to track data transformations, training, and evaluation pipelines. If data changes, we
+                        just run <code>dvc repro</code> to automatically rebuild the winning model.</p>
+                </div>
+                <div class="card">
+                    <h3 style="color: #34d399;">MLflow & DagsHub</h3>
+                    <p>Every training run logs hyperparameters, F1-scores, and accuracy to DagsHub. The evaluation
+                        script automatically selects and exports the best performing model to production.</p>
+                </div>
+            </div>
+            <div class="notes-container">
+                <strong>Speaker Notes:</strong> This is a major technical highlight. Mention that without DVC/MLflow, ML
+                projects turn into a mess of "model_final_v2_real.pkl". We automated the pipeline so the backend always
+                serves the mathematically proven "best" model.
+            </div>
+        </div>
+
+        <!-- Slide 6 -->
+        <div class="slide">
+            <h2>Explainable AI: Red Flags</h2>
+            <p>A simple "Phishing" label isn't enough. Users need to know <em>why</em>.</p>
+            <p style="margin-top: 15px;">Our backend calculates a <strong>Risk Score (0-100)</strong> and pairs it with
+                keyword-based contextual analysis:</p>
+            <ul style="margin-top: 15px;">
+                <li>🚨 <strong>Urgency:</strong> "Act now", "Expires immediately"</li>
+                <li>🚨 <strong>Suspicious Links:</strong> "Click here to verify"</li>
+                <li>🚨 <strong>Financial Deception:</strong> "Wire transfer", "Account suspended"</li>
+            </ul>
+            <p style="margin-top: 15px;">This combined approach provides a human-readable explanation alongside the
+                mathematical confidence score.</p>
+            <div class="notes-container">
+                <strong>Speaker Notes:</strong> Explainability is key for user trust. If the AI says a message is 92%
+                risky, the Red Flags engine provides the concrete evidence (e.g., "This message contains urgent language
+                and requests financial details").
+            </div>
+        </div>
+
+        <!-- Slide 7 -->
+        <div class="slide">
+            <h2>Production Deployment (AWS & Docker)</h2>
+            <p>We designed the system to be highly portable and scalable.</p>
+            <div class="grid-2">
+                <div class="card">
+                    <h3 style="color: #a78bfa; margin-bottom: 10px;">Containerization</h3>
+                    <p>The entire stack is packaged using Docker & Docker Compose. We maintain separate Dev
+                        (hot-reloading) and Prod (optimized) configurations.</p>
+                </div>
+                <div class="card">
+                    <h3 style="color: #fb923c; margin-bottom: 10px;">AWS EC2 Infrastructure</h3>
+                    <p>Currently deployed on an AWS EC2 instance. Traffic is routed through an <strong>Nginx Reverse
+                            Proxy</strong> on port 80 for robust, public internet access.</p>
+                </div>
+            </div>
+            <div class="notes-container">
+                <strong>Speaker Notes:</strong> Discuss the deployment strategy. We containerized the frontend and
+                backend. We use `docker-compose.prod.yml` to launch it on a free-tier AWS EC2 instance. It takes less
+                than 3 seconds to spin up the entire application using our pre-trained static models.
+            </div>
+        </div>
+
+        <!-- Slide 8 -->
+        <div class="slide">
+            <h1 style="font-size: 4rem; text-align: center; margin-top: 100px;">Live Demo</h1>
+            <p style="text-align: center; font-size: 1.5rem; margin-top: 20px;">Let's see the Phishing Detector in
+                action.</p>
+            <div class="notes-container" style="margin-top: 80px;">
+                <strong>Speaker Notes:</strong> End the slides here. Open up your web browser with the EC2 public IP
+                address and demonstrate pasting a phishing email vs a legitimate email. Show the Risk Score and Red
+                Flags UI. Thank the audience and ask for questions.
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button id="prevBtn" onclick="changeSlide(-1)">Previous</button>
+        <div class="progress-bar">
+            <div class="progress" id="progress"></div>
+        </div>
+        <button id="nextBtn" onclick="changeSlide(1)">Next Slide</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progress = document.getElementById('progress');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+
+        function updateUI() {
+            // Update slides
+            slides.forEach((slide, index) => {
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                }
+            });
+
+            // Update progress bar
+            const progressPercentage = ((currentSlide) / (slides.length - 1)) * 100;
+            progress.style.width = `${progressPercentage}%`;
+
+            // Update buttons
+            prevBtn.disabled = currentSlide === 0;
+
+            if (currentSlide === slides.length - 1) {
+                nextBtn.innerText = "Finish";
+                nextBtn.style.background = "rgba(16, 185, 129, 0.5)";
+            } else {
+                nextBtn.innerText = "Next Slide";
+                nextBtn.style.background = "rgba(255,255,255,0.1)";
+            }
+        }
+
+        function changeSlide(direction) {
+            currentSlide += direction;
+            if (currentSlide < 0) currentSlide = 0;
+            if (currentSlide >= slides.length) currentSlide = slides.length - 1;
+            updateUI();
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                changeSlide(1);
+            } else if (e.key === 'ArrowLeft') {
+                changeSlide(-1);
+            }
+        });
+
+        // Initialize
+        updateUI();
+    </script>
+</body>
+
+</html>

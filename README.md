@@ -114,7 +114,6 @@ docker-compose -f docker-compose.prod.yml up -d --build
 We provide two deployment paths for AWS EC2:
 
 1. **[PROD_DEPLOYMENT_GUIDE.md](./PROD_DEPLOYMENT_GUIDE.md)** *(Recommended)*: A lightweight, production-ready approach using `docker-compose.prod.yml` and pre-trained static models. Perfect for the EC2 Free Tier.
-2. **[AWS_DEPLOYMENT.md](./AWS_DEPLOYMENT.md)**: A full deployment guide including MLflow and remote training on the server.
 
 ---
 
